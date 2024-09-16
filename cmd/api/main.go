@@ -36,7 +36,7 @@ func main() {
 	}
 
 	router := http.NewServeMux()
-	router.HandleFunc("/v1/healthcheck", appInstance.healthCheckHandler)
+	router.HandleFunc("/v1/healthcheck", appInstance.healthcheckHandler)
 
 	apiServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", setting.port),
