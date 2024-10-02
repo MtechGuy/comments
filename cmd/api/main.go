@@ -36,9 +36,8 @@ func main() {
 	}
 
 	apiServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", setting.port),
-		Handler: appInstance.routes(),
-
+		Addr:         fmt.Sprintf(":%d", setting.port),
+		Handler:      appInstance.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
