@@ -13,13 +13,13 @@ func (a *applicationDependencies) writeJSON(w http.ResponseWriter, status int, d
 		return err
 	}
 	jsResponse = append(jsResponse, '\n')
-	// additional headers to be set
+
 	for key, value := range headers {
 		w.Header()[key] = value
 	}
-	// set content type header
+
 	w.Header().Set("Content-Type", "application/json")
-	// explicitly set the response status code
+
 	w.WriteHeader(status)
 	_, err = w.Write(jsResponse)
 	if err != nil {
