@@ -35,12 +35,13 @@ func main() {
 		logger: logger,
 	}
 
-	router := http.NewServeMux()
-	router.HandleFunc("/v1/healthcheck", appInstance.healthcheckHandler)
+	// router := http.NewServeMux()
+	// router.HandleFunc("/v1/healthcheck", appInstance.healthCheckHandler)
 
 	apiServer := &http.Server{
-		Addr:         fmt.Sprintf(":%d", setting.port),
-		Handler:      router,
+		Addr:    fmt.Sprintf(":%d", setting.port),
+		Handler: appInstance.routes(),
+
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
