@@ -11,5 +11,5 @@ type Comment struct {
 	Content   string    // the comment data
 	Author    string    // the person who wrote the comment
 	CreatedAt time.Time // database timestamp
-	Verson    int32     // incremented on each update
+	Version   int32     // incremented on each update
 }
