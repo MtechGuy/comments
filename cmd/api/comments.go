@@ -5,7 +5,8 @@ import (
 	"net/http"
 
 	// import the data package which contains the definition for Comment
-	_ "github.com/mtechguy/comments/internal/data"
+	"github.com/mtechguy/comments/internal/data"
+	"github.com/mtechguy/comments/internal/validator"
 )
 
 func (a *applicationDependencies) createCommentHandler(w http.ResponseWriter,
@@ -20,6 +21,19 @@ func (a *applicationDependencies) createCommentHandler(w http.ResponseWriter,
 	err := a.readJSON(w, r, &incomingData)
 	if err != nil {
 		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	comment := &data.Comment{
+		Content: incomingData.Content,
+		Author:  incomingData.Author,
+	}
+	// Initialize a Validator instance
+	v := validator.New()
+
+	data.ValidateComment(v, comment)
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors) // implemented later
 		return
 	}
 
