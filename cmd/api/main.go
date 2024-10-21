@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/mtechguy/comments/internal/data"
 )
 
 const appVersion = "7.0.0"
@@ -24,8 +25,9 @@ type serverConfig struct {
 }
 
 type applicationDependencies struct {
-	config serverConfig
-	logger *slog.Logger
+	config       serverConfig
+	logger       *slog.Logger
+	commentModel data.CommentModel
 }
 
 func main() {
@@ -51,8 +53,9 @@ func main() {
 	logger.Info("Database connection pool established")
 
 	appInstance := &applicationDependencies{
-		config: setting,
-		logger: logger,
+		config:       setting,
+		logger:       logger,
+		commentModel: data.CommentModel{DB: db},
 	}
 
 	apiServer := &http.Server{
