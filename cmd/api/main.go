@@ -44,7 +44,7 @@ func main() {
 	// the call to openDB() sets up our connection pool
 	db, err := openDB(setting)
 	if err != nil {
-		logger.Error("Database connection failed", err)
+		logger.Error("Database connection failed")
 		os.Exit(1)
 	}
 	// release the database resources before exiting
