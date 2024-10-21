@@ -44,6 +44,11 @@ func (a *applicationDependencies) notFoundResponse(w http.ResponseWriter,
 	a.errorResponseJSON(w, r, http.StatusNotFound, message)
 }
 
+func (a *applicationDependencies) IDnotFound(w http.ResponseWriter, r *http.Request, id int64) {
+	message := fmt.Sprintf("Comment with id = %d was already deleted", id)
+	a.errorResponseJSON(w, r, http.StatusNotFound, message)
+}
+
 func (a *applicationDependencies) methodNotAllowedResponse(
 	w http.ResponseWriter,
 	r *http.Request) {
