@@ -149,3 +149,51 @@ func (c CommentModel) Delete(id int64) error {
 	return nil
 
 }
+
+func (c CommentModel) GetAll() ([]*Comment, error) {
+
+	// the SQL query to be executed against the database table
+	query := `
+			SELECT id, created_at, content, author, version
+			FROM comments
+			ORDER BY id
+		  `
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := c.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// clean up the memory that was used
+	defer rows.Close()
+	// we will store the address of each comment in our slice
+	comments := []*Comment{}
+
+	// process each row that is in rows
+
+	for rows.Next() {
+		var comment Comment
+		err := rows.Scan(&comment.ID,
+			&comment.CreatedAt,
+			&comment.Content,
+			&comment.Author,
+			&comment.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		// add the row to our slice
+		comments = append(comments, &comment)
+	} // end of for loop
+
+	// after we exit the loop we need to check if it generated any errors
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return comments, nil
+
+}
