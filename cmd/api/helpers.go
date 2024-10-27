@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/mtechguy/comments/internal/validator"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -110,13 +113,47 @@ func (a *applicationDependencies) readJSON(w http.ResponseWriter,
 }
 
 func (a *applicationDependencies) readIDParam(r *http.Request) (int64, error) {
-	// Get the URL parameters
+
 	params := httprouter.ParamsFromContext(r.Context())
-	// Convert the id from string to int
+
 	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
 	if err != nil || id < 1 {
 		return 0, errors.New("invalid id parameter")
 	}
 
 	return id, nil
+}
+
+func (a *applicationDependencies) getSingleQueryParameter(queryParameters url.Values, key string, defaultValue string) string {
+
+	result := queryParameters.Get(key)
+	if result == "" {
+		return defaultValue
+	}
+	return result
+}
+
+func (a *applicationDependencies) getMultipleQueryParameters(queryParameters url.Values, key string, defaultValue []string) []string {
+
+	result := queryParameters.Get(key)
+	if result == "" {
+		return defaultValue
+	}
+	return strings.Split(result, ",")
+}
+
+func (a *applicationDependencies) getSingleIntegerParameter(queryParameters url.Values, key string, defaultValue int, v *validator.Validator) int {
+
+	result := queryParameters.Get(key)
+	if result == "" {
+		return defaultValue
+	}
+	// try to convert to an integer
+	intValue, err := strconv.Atoi(result)
+	if err != nil {
+		v.AddError(key, "must be an integer value")
+		return defaultValue
+	}
+
+	return intValue
 }
