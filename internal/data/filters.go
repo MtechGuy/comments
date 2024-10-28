@@ -1,14 +1,19 @@
 package data
 
 import (
+	"strings"
+
 	"github.com/mtechguy/comments/internal/validator"
 )
 
 // The Filters type will contain fields related to pagination
 // and eventually the fields related to sorting.
 type Filters struct {
-	Page     int // Which page number the client wants.
-	PageSize int // How many records per page.
+	Page         int // Which page number the client wants.
+	PageSize     int // How many records per page.
+	Sort         string
+	SortSafeList []string // allowed sort fields
+
 }
 
 type Metadata struct {
@@ -25,6 +30,27 @@ func ValidateFilters(v *validator.Validator, f Filters) {
 	v.Check(f.Page <= 500, "page", "must be a maximum of 500")
 	v.Check(f.PageSize > 0, "page_size", "must be greater than zero")
 	v.Check(f.PageSize <= 100, "page_size", "must be a maximum of 100")
+	v.Check(validator.PermittedValue(f.Sort, f.SortSafeList...), "sort",
+		"invalid sort value")
+
+}
+
+func (f Filters) sortColumn() string {
+	for _, safeValue := range f.SortSafeList {
+		if f.Sort == safeValue {
+			return strings.TrimPrefix(f.Sort, "-")
+		}
+	}
+	// don't allow the operation to continue
+	// if case of SQL injection attack
+	panic("unsafe sort parameter: " + f.Sort)
+}
+
+func (f Filters) sortDirection() string {
+	if strings.HasPrefix(f.Sort, "-") {
+		return "DESC"
+	}
+	return "ASC"
 }
 
 // limit returns the number of records per page.
