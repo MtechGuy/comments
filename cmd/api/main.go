@@ -6,10 +6,12 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/mtechguy/comments/internal/data"
+	"github.com/mtechguy/comments/internal/mailer"
 )
 
 const appVersion = "7.0.0"
@@ -25,6 +27,13 @@ type serverConfig struct {
 		burst   int     // initial requests possible
 		enabled bool    // enable or disable rate limiter
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 type applicationDependencies struct {
@@ -32,7 +41,19 @@ type applicationDependencies struct {
 	logger       *slog.Logger
 	commentModel data.CommentModel
 	userModel    data.UserModel
+	mailer       mailer.Mailer
+	wg           sync.WaitGroup
 }
+
+// type config struct {
+// 	smtp struct {
+// 		host     string
+// 		port     int
+// 		username string
+// 		password string
+// 		sender   string
+// 	}
+// }
 
 func main() {
 	var setting serverConfig
@@ -46,6 +67,16 @@ func main() {
 	flag.IntVar(&setting.limiter.burst, "limiter-burst", 5, "Rate Limiter maximum burst")
 
 	flag.BoolVar(&setting.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
+
+	flag.StringVar(&setting.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	// We have port 25, 465, 587, 2525. If 25 doesn't work choose another
+	flag.IntVar(&setting.smtp.port, "smtp-port", 25, "SMTP port")
+	// Use your Username value provided by Mailtrap
+	flag.StringVar(&setting.smtp.username, "smtp-username", "6dc8c6bf264dc7", "SMTP username")
+
+	flag.StringVar(&setting.smtp.password, "smtp-password", "922bab0f2be294", "SMTP password")
+
+	flag.StringVar(&setting.smtp.sender, "smtp-sender", "Comments Community <no-reply@commentscommunity.alexperaza.net>", "SMTP sender")
 
 	flag.Parse()
 
@@ -67,21 +98,9 @@ func main() {
 		logger:       logger,
 		userModel:    data.UserModel{DB: db},
 		commentModel: data.CommentModel{DB: db},
+		mailer: mailer.New(setting.smtp.host, setting.smtp.port,
+			setting.smtp.username, setting.smtp.password, setting.smtp.sender),
 	}
-
-	// apiServer := &http.Server{
-	// 	Addr:         fmt.Sprintf(":%d", setting.port),
-	// 	Handler:      appInstance.routes(),
-	// 	IdleTimeout:  time.Minute,
-	// 	ReadTimeout:  5 * time.Second,
-	// 	WriteTimeout: 10 * time.Second,
-	// 	ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
-	// }
-
-	// logger.Info("Starting server", "address", apiServer.Addr, "environment", setting.environment)
-	// err = apiServer.ListenAndServe()
-	// logger.Error(err.Error())
-	// os.Exit(1)
 
 	err = appInstance.serve()
 	if err != nil {

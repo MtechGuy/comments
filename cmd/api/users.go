@@ -57,6 +57,13 @@ func (a *applicationDependencies) registerUserHandler(w http.ResponseWriter,
 	data := envelope{
 		"user": user,
 	}
+	a.background(func() {
+		err = a.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		if err != nil {
+			a.logger.Error(err.Error())
+		}
+	})
+
 	// Status code 201 resource created
 	err = a.writeJSON(w, http.StatusCreated, data, nil)
 	if err != nil {
