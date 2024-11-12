@@ -133,14 +133,14 @@ func (a *applicationDependencies) getSingleQueryParameter(queryParameters url.Va
 	return result
 }
 
-func (a *applicationDependencies) getMultipleQueryParameters(queryParameters url.Values, key string, defaultValue []string) []string {
+// func (a *applicationDependencies) getMultipleQueryParameters(queryParameters url.Values, key string, defaultValue []string) []string {
 
-	result := queryParameters.Get(key)
-	if result == "" {
-		return defaultValue
-	}
-	return strings.Split(result, ",")
-}
+// 	result := queryParameters.Get(key)
+// 	if result == "" {
+// 		return defaultValue
+// 	}
+// 	return strings.Split(result, ",")
+// }
 
 func (a *applicationDependencies) getSingleIntegerParameter(queryParameters url.Values, key string, defaultValue int, v *validator.Validator) int {
 

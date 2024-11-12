@@ -31,6 +31,7 @@ type applicationDependencies struct {
 	config       serverConfig
 	logger       *slog.Logger
 	commentModel data.CommentModel
+	userModel    data.UserModel
 }
 
 func main() {
@@ -64,6 +65,7 @@ func main() {
 	appInstance := &applicationDependencies{
 		config:       setting,
 		logger:       logger,
+		userModel:    data.UserModel{DB: db},
 		commentModel: data.CommentModel{DB: db},
 	}
 
