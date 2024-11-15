@@ -4,6 +4,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/mtechguy/comments/internal/data"
 	"github.com/mtechguy/comments/internal/validator"
@@ -54,11 +55,22 @@ func (a *applicationDependencies) registerUserHandler(w http.ResponseWriter,
 		}
 		return
 	}
+	token, err := a.tokenModel.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
 	data := envelope{
 		"user": user,
 	}
 	a.background(func() {
-		err = a.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		data := map[string]any{
+			"activationToken": token.Plaintext,
+			"userID":          user.ID,
+		}
+
+		err = a.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
 			a.logger.Error(err.Error())
 		}
@@ -69,5 +81,64 @@ func (a *applicationDependencies) registerUserHandler(w http.ResponseWriter,
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 		return
+	}
+}
+
+func (a *applicationDependencies) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Get the body from the request and store in temporary struct
+	var incomingData struct {
+		TokenPlaintext string `json:"token"`
+	}
+	err := a.readJSON(w, r, &incomingData)
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+	// Validate the data
+	v := validator.New()
+	data.ValidateTokenPlaintext(v, incomingData.TokenPlaintext)
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+	// Let's check if the token provided belongs to the user
+	// We will implement the GetForToken() method later
+	user, err := a.userModel.GetForToken(data.ScopeActivation,
+		incomingData.TokenPlaintext)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			v.AddError("token", "invalid or expired activation token")
+			a.failedValidationResponse(w, r, v.Errors)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	// User provided the right token so activate them
+	user.Activated = true
+	err = a.userModel.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			a.editConflictResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = a.tokenModel.DeleteAllForUser(data.ScopeActivation, user.ID)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Send a response
+	data := envelope{
+		"user": user,
+	}
+	err = a.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
 	}
 }

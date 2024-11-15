@@ -43,17 +43,8 @@ type applicationDependencies struct {
 	userModel    data.UserModel
 	mailer       mailer.Mailer
 	wg           sync.WaitGroup
+	tokenModel   data.TokenModel
 }
-
-// type config struct {
-// 	smtp struct {
-// 		host     string
-// 		port     int
-// 		username string
-// 		password string
-// 		sender   string
-// 	}
-// }
 
 func main() {
 	var setting serverConfig
@@ -70,11 +61,11 @@ func main() {
 
 	flag.StringVar(&setting.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
 	// We have port 25, 465, 587, 2525. If 25 doesn't work choose another
-	flag.IntVar(&setting.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.IntVar(&setting.smtp.port, "smtp-port", 2525, "SMTP port")
 	// Use your Username value provided by Mailtrap
-	flag.StringVar(&setting.smtp.username, "smtp-username", "6dc8c6bf264dc7", "SMTP username")
+	flag.StringVar(&setting.smtp.username, "smtp-username", "c3e1c1678d71c9", "SMTP username")
 
-	flag.StringVar(&setting.smtp.password, "smtp-password", "922bab0f2be294", "SMTP password")
+	flag.StringVar(&setting.smtp.password, "smtp-password", "38d1f200e85005", "SMTP password")
 
 	flag.StringVar(&setting.smtp.sender, "smtp-sender", "Comments Community <no-reply@commentscommunity.alexperaza.net>", "SMTP sender")
 
@@ -98,6 +89,7 @@ func main() {
 		logger:       logger,
 		userModel:    data.UserModel{DB: db},
 		commentModel: data.CommentModel{DB: db},
+		tokenModel:   data.TokenModel{DB: db},
 		mailer: mailer.New(setting.smtp.host, setting.smtp.port,
 			setting.smtp.username, setting.smtp.password, setting.smtp.sender),
 	}
